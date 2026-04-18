@@ -100,9 +100,10 @@ const peopleStore=localforage.createInstance({name:'docvault',storeName:'people'
 const FOLDERS=['Identity','Education','Medical','Financial','Photos','Others'];
 const RELATIONSHIPS=['Self','Spouse','Father','Mother','Child','Sibling','Other'];
 const REL_COLORS={Self:'hsl(168,70%,42%)',Spouse:'hsl(330,70%,55%)',Father:'hsl(220,70%,55%)',Mother:'hsl(345,65%,58%)',Child:'hsl(45,85%,50%)',Sibling:'hsl(260,60%,60%)',Other:'hsl(200,60%,50%)'};
+const MAX_FILE_SIZE=50*1024*1024; // 50 MB
 
 function getInitials(name){const w=name.trim().split(/\s+/);return(w.length===1?w[0].slice(0,2):(w[0][0]+w[w.length-1][0])).toUpperCase();}
-function safeSeg(s){return s.replace(/[/\\?%*:|"<>]/g,'_');}
+function sanitizePathSegment(s){return s.replace(/[/\\?%*:|"<>]/g,'_');}
 async function allVals(store){const r=[];await store.iterate(v=>{r.push(v);});return r;}
 
 async function addPerson(name,rel,prof={}){
@@ -133,7 +134,7 @@ async function exportVaultAsZip(){
     const docs=await getDocsByPerson(p.id);
     await Promise.all(docs.map(async doc=>{
       const b=await getDocumentFile(doc.id);if(!b)return;
-      zip.file(`${safeSeg(p.name)}/${safeSeg(doc.folderName)}/${safeSeg(doc.fileName)}`,b);count++;
+      zip.file(`${sanitizePathSegment(p.name)}/${sanitizePathSegment(doc.folderName)}/${sanitizePathSegment(doc.fileName)}`,b);count++;
     }));
   }));
   const zb=await zip.generateAsync({type:'blob'});saveAs(zb,'DocVault_Backup.zip');return{success:true,count};
@@ -643,7 +644,7 @@ function openUpload(person){
   ov.addEventListener('click',e=>{if(e.target===ov)close();});
 
   function applyFile(f){
-    if(f.size>52428800){sizeErr.textContent=`\u26a0\ufe0f File too large (${(f.size/1048576).toFixed(1)} MB). Max 50 MB.`;sizeErr.style.display='block';return;}
+    if(f.size>MAX_FILE_SIZE){sizeErr.textContent=`\u26a0\ufe0f File too large (${(f.size/1048576).toFixed(1)} MB). Max 50 MB.`;sizeErr.style.display='block';return;}
     sizeErr.style.display='none';selFile=f;document.getElementById('up-dt').textContent=f.name;
     drop.style.borderColor='var(--primary)';if(!nameInp.value)nameInp.value=f.name;submitBtn.disabled=false;
   }
