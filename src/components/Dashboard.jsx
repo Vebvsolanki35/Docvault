@@ -74,12 +74,29 @@ function StatCard({ label, value, icon: Icon }) {
   )
 }
 
-export default function Dashboard({ people, onSelectPerson, onAddPerson, lang }) {
+export default function Dashboard({ people, loadingPeople, onSelectPerson, onAddPerson, lang }) {
   const [docCounts, setDocCounts] = useState({})
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [localPeople, setLocalPeople] = useState(people)
+
+  /* Scroll lock + Escape key when Add Person modal is open */
+  useEffect(() => {
+    if (!showModal) return
+    document.body.style.overflow = 'hidden'
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setShowModal(false)
+        setForm(EMPTY_FORM)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showModal])
 
   /* Sync local copy when parent passes updated people */
   useEffect(() => {
@@ -177,7 +194,19 @@ export default function Dashboard({ people, onSelectPerson, onAddPerson, lang })
       </div>
 
       {/* Person grid or empty state */}
-      {localPeople.length === 0 ? (
+      {loadingPeople ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: '16px',
+          }}
+        >
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton" style={{ height: '160px', borderRadius: '14px' }} />
+          ))}
+        </div>
+      ) : localPeople.length === 0 ? (
         <div
           style={{
             display: 'flex',

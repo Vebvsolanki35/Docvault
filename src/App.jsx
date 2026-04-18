@@ -32,6 +32,7 @@ export default function App() {
   )
   const [viewState, setViewState] = useState({ view: 'home', person: null })
   const [people, setPeople] = useState([])
+  const [loadingPeople, setLoadingPeople] = useState(false)
   const [showUpload, setShowUpload] = useState(false)
   const [showViewer, setShowViewer] = useState(null) // null | docMetadata object
   const [searchQuery, setSearchQuery] = useState('')
@@ -56,7 +57,11 @@ export default function App() {
   // Load people once vault is unlocked
   useEffect(() => {
     if (isUnlocked) {
-      getPeople().then(setPeople).catch(console.error)
+      setLoadingPeople(true)
+      getPeople()
+        .then(setPeople)
+        .catch(console.error)
+        .finally(() => setLoadingPeople(false))
     }
   }, [isUnlocked])
 
@@ -265,7 +270,7 @@ export default function App() {
             title={t('save_vault', lang)}
           >
             <Archive size={15} />
-            {exporting ? '…' : t('save_vault', lang)}
+            {exporting ? 'Exporting…' : t('save_vault', lang)}
           </button>
         </div>
       </nav>
@@ -275,6 +280,7 @@ export default function App() {
         {activeView === 'home' && (
           <Dashboard
             people={people}
+            loadingPeople={loadingPeople}
             onSelectPerson={handleSelectPerson}
             onAddPerson={handleAddPerson}
             lang={lang}
@@ -581,7 +587,7 @@ function MobileBottomNav({
       {/* Save / Export */}
       <NavTab
         icon={<Archive size={22} />}
-        label={t('save_vault', lang)}
+        label={exporting ? 'Exporting…' : t('save_vault', lang)}
         active={false}
         onClick={onSave}
         disabled={exporting}

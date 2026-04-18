@@ -30,7 +30,6 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
   // Inline rename
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState(doc.name)
-  const nameInputRef = useRef(null)
 
   // OCR
   const [ocrProgress, setOcrProgress] = useState(null) // null | 0-100
@@ -43,32 +42,74 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  const nameInputRef = useRef(null)
+  const modalRef = useRef(null)
+
+  // Scroll lock + Escape key + focus trap
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    const focusable = modalRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
+    if (focusable?.length) focusable[0].focus()
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        if (showDownload) { setShowDownload(false); return }
+        onClose()
+        return
+      }
+      if (e.key !== 'Tab' || !focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose, showDownload])
+
   // ── Load blob ────────────────────────────────────────────────
   useEffect(() => {
-    let objectUrl = null
-    const localPageUrls = []
+    let cancelled = false
+    const createdUrls = []
     setLoadingFile(true)
 
     getDocumentFile(doc.id).then(async (b) => {
-      if (!b) { setLoadingFile(false); return }
+      if (cancelled || !b) { if (!cancelled) setLoadingFile(false); return }
       setBlob(b)
-      objectUrl = URL.createObjectURL(b)
 
       if (doc.fileType === 'application/pdf') {
         setBlobUrl(null)
         const pages = await pdfToImages(b)
         const urls = pages.map((p) => URL.createObjectURL(p))
-        localPageUrls.push(...urls)
+        if (cancelled) {
+          urls.forEach((u) => URL.revokeObjectURL(u))
+          return
+        }
+        createdUrls.push(...urls)
         setPdfPageUrls(urls)
       } else {
-        setBlobUrl(objectUrl)
+        const url = URL.createObjectURL(b)
+        if (cancelled) {
+          URL.revokeObjectURL(url)
+          return
+        }
+        createdUrls.push(url)
+        setBlobUrl(url)
       }
       setLoadingFile(false)
-    }).catch(() => setLoadingFile(false))
+    }).catch(() => { if (!cancelled) setLoadingFile(false) })
 
     return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl)
-      localPageUrls.forEach((u) => URL.revokeObjectURL(u))
+      cancelled = true
+      createdUrls.forEach((u) => URL.revokeObjectURL(u))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id])
@@ -105,20 +146,23 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
     if (!blob) return
     setOcrRunning(true)
     setOcrProgress(0)
+    let worker = null
     try {
-      const Tesseract = (await import('tesseract.js')).default
-      const result = await Tesseract.recognize(blob, 'eng', {
+      const { createWorker } = await import('tesseract.js')
+      worker = await createWorker('eng', 1, {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setOcrProgress(Math.round(m.progress * 100))
           }
         },
       })
+      const result = await worker.recognize(blob)
       const extracted = result.data.text.trim()
       setRemark((prev) => (prev ? `${prev}\n\n${extracted}` : extracted))
     } catch (err) {
       alert(`OCR failed: ${err.message}`)
     } finally {
+      if (worker) await worker.terminate()
       setOcrRunning(false)
       setOcrProgress(null)
     }
@@ -142,6 +186,7 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
     <div className="modal-overlay" onClick={onClose}>
       <div
         className="modal-box"
+        ref={modalRef}
         style={{ maxWidth: '800px', width: '95%' }}
         onClick={(e) => e.stopPropagation()}
       >
