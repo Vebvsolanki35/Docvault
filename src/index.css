@@ -352,6 +352,23 @@ button {
   display: block;
 }
 
+/* --- .mobile-only ---------------------------------------- */
+.mobile-only {
+  display: none !important;
+}
+
+/* --- .app-main ------------------------------------------- */
+.app-main {
+  padding-top: 60px;
+  padding-bottom: 0;
+  min-height: 100vh;
+}
+
+/* --- .mobile-search-bar ---------------------------------- */
+.mobile-search-bar {
+  display: none;
+}
+
 /* 6. Mobile Responsive -------------------------------------- */
 @media (max-width: 768px) {
   body {
@@ -383,5 +400,18 @@ button {
 
   .desktop-only {
     display: none !important;
+  }
+
+  .mobile-only {
+    display: flex !important;
+  }
+
+  .app-main {
+    padding-top: 0;
+    padding-bottom: 72px;
+  }
+
+  .mobile-search-bar {
+    display: block;
   }
 }
