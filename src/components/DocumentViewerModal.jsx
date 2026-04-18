@@ -46,6 +46,7 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
   // ── Load blob ────────────────────────────────────────────────
   useEffect(() => {
     let objectUrl = null
+    const localPageUrls = []
     setLoadingFile(true)
 
     getDocumentFile(doc.id).then(async (b) => {
@@ -56,7 +57,9 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
       if (doc.fileType === 'application/pdf') {
         setBlobUrl(null)
         const pages = await pdfToImages(b)
-        setPdfPageUrls(pages.map((p) => URL.createObjectURL(p)))
+        const urls = pages.map((p) => URL.createObjectURL(p))
+        localPageUrls.push(...urls)
+        setPdfPageUrls(urls)
       } else {
         setBlobUrl(objectUrl)
       }
@@ -65,7 +68,7 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
 
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl)
-      pdfPageUrls.forEach((u) => URL.revokeObjectURL(u))
+      localPageUrls.forEach((u) => URL.revokeObjectURL(u))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doc.id])

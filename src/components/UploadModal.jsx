@@ -58,21 +58,27 @@ export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }
     setProgress(0)
 
     // Fake progress 0 → 100 % over 1.2 s
+    let stopped = false
     const interval = setInterval(() => {
+      if (stopped) return
       setProgress((p) => {
-        if (p >= 95) { clearInterval(interval); return p }
+        if (p >= 95) return p
         return p + Math.random() * 12
       })
     }, 80)
+    function stopInterval() {
+      stopped = true
+      clearInterval(interval)
+    }
 
     try {
       await saveDocument(file, docName.trim() || file.name, folder, person.id, remark.trim())
-      clearInterval(interval)
+      stopInterval()
       setProgress(100)
       await new Promise((res) => setTimeout(res, 300))
       onUploaded()
     } catch (err) {
-      clearInterval(interval)
+      stopInterval()
       setUploading(false)
       setProgress(0)
       alert(`Upload failed: ${err.message}`)
