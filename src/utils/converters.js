@@ -53,28 +53,32 @@ export async function pdfToImages(pdfBlob, scale = 1.5) {
   const pageCount = pdf.numPages;
   const blobs = [];
 
-  for (let i = 1; i <= pageCount; i++) {
-    const page = await pdf.getPage(i);
-    const viewport = page.getViewport({ scale });
+  try {
+    for (let i = 1; i <= pageCount; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale });
 
-    const canvas = document.createElement('canvas');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-    const ctx = canvas.getContext('2d');
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
 
-    await page.render({ canvasContext: ctx, viewport }).promise;
+      await page.render({ canvasContext: ctx, viewport }).promise;
 
-    const pageBlob = await new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (result) => {
-          if (result) resolve(result);
-          else reject(new Error(`toBlob failed for page ${i}`));
-        },
-        'image/png',
-      );
-    });
+      const pageBlob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (result) => {
+            if (result) resolve(result);
+            else reject(new Error(`toBlob failed for page ${i}`));
+          },
+          'image/png',
+        );
+      });
 
-    blobs.push(pageBlob);
+      blobs.push(pageBlob);
+    }
+  } finally {
+    await pdf.destroy();
   }
 
   return blobs;

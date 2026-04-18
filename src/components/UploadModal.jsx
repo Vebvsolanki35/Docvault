@@ -1,7 +1,9 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { X, UploadCloud, Camera } from 'lucide-react'
 import { FOLDERS, saveDocument, checkDuplicate } from '../utils/storage'
 import { t } from '../utils/i18n'
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 
 const labelStyle = {
   display: 'block',
@@ -14,6 +16,7 @@ const labelStyle = {
 
 export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }) {
   const [file, setFile] = useState(null)
+  const [fileSizeError, setFileSizeError] = useState(null)
   const [docName, setDocName] = useState('')
   const [folder, setFolder] = useState(FOLDERS[0])
   const [remark, setRemark] = useState('')
@@ -24,8 +27,44 @@ export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }
 
   const fileInputRef = useRef(null)
   const cameraInputRef = useRef(null)
+  const modalRef = useRef(null)
+
+  // Scroll lock + Escape key + focus trap
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    const focusable = modalRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
+    if (focusable?.length) focusable[0].focus()
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') { onClose(); return }
+      if (e.key !== 'Tab' || !focusable?.length) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus() }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus() }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
 
   const applyFile = useCallback((f) => {
+    if (f.size > MAX_FILE_SIZE) {
+      setFileSizeError(
+        `File is too large (${(f.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 50 MB.`,
+      )
+      // Do not update the file state — keep any previously valid file intact.
+      return
+    }
+    // Valid file: clear any previous size error and update state.
+    setFileSizeError(null)
     setFile(f)
     if (!docName) setDocName(f.name)
   }, [docName])
@@ -101,7 +140,7 @@ export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-box" ref={modalRef} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
           <h3 style={{ fontFamily: "'Sora', system-ui, sans-serif", fontWeight: 700, fontSize: '1.15rem', color: 'var(--text)' }}>
@@ -173,6 +212,23 @@ export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }
               <Camera size={16} /> Take Photo
             </button>
           </div>
+
+          {/* File size error */}
+          {fileSizeError && (
+            <div
+              style={{
+                background: '#FEE2E2',
+                border: '1.5px solid #EF4444',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                color: '#991B1B',
+                fontSize: '14px',
+                lineHeight: 1.5,
+              }}
+            >
+              ⚠️ {fileSizeError}
+            </div>
+          )}
 
           {/* Duplicate warning */}
           {duplicateWarning && (

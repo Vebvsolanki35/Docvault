@@ -6,6 +6,12 @@
     <meta name="theme-color" content="#00C896" />
     <link rel="manifest" href="/manifest.json" />
     <title>DocVault</title>
+    <script>
+      (function () {
+        var t = localStorage.getItem('dv_theme');
+        if (t) document.documentElement.setAttribute('data-theme', t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
