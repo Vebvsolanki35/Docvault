@@ -8,8 +8,10 @@
   <script>
     (function(){var t=localStorage.getItem('dv_theme');if(t)document.documentElement.setAttribute('data-theme',t);})();
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
 
     :root {
       --primary:     #00C896;
@@ -1550,7 +1552,7 @@
         viewerSt.loadingFile = false;
         renderViewerModal();
         const pages = await pdfToImages(blob);
-        if (!viewerSt) { pages.forEach(p => {}); return; }
+        if (!viewerSt) return; // modal closed while rendering PDF pages
         viewerSt.pdfPageUrls = pages.map(p => URL.createObjectURL(p));
         renderViewerModal();
       } else {
