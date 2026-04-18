@@ -149,7 +149,7 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
     let worker = null
     try {
       const { createWorker } = await import('tesseract.js')
-      worker = await createWorker('eng', 1, {
+      worker = await createWorker('eng', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setOcrProgress(Math.round(m.progress * 100))

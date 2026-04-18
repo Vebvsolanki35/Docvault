@@ -60,8 +60,10 @@ export default function UploadModal({ person, onClose, onUploaded, lang = 'en' }
       setFileSizeError(
         `File is too large (${(f.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is 50 MB.`,
       )
+      // Do not update the file state — keep any previously valid file intact.
       return
     }
+    // Valid file: clear any previous size error and update state.
     setFileSizeError(null)
     setFile(f)
     if (!docName) setDocName(f.name)
