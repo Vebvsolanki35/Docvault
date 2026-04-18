@@ -4,17 +4,949 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DocVault</title>
-  <script>
-    if (document.location.pathname !== '/docvault.html') {
-      fetch('/docvault.html').then(function(res) {
-        if (res.ok) {
-          window.location.replace('/docvault.html');
-        }
-      });
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+  <style>
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.08)}}
+    @keyframes shake{0%{transform:translateX(0)}15%{transform:translateX(-8px)}30%{transform:translateX(8px)}45%{transform:translateX(-8px)}60%{transform:translateX(8px)}75%{transform:translateX(-4px)}90%{transform:translateX(4px)}100%{transform:translateX(0)}}
+    @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+    @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+    :root{--primary:#00C896;--primary-dim:rgba(0,200,150,.12);--bg:#F0F4F8;--surface:#FFFFFF;--surface-2:#F7F9FC;--text:#0D1117;--text-muted:#6B7280;--border:#E2E8F0;--danger:#EF4444;--radius:14px;--shadow:0 4px 24px rgba(0,0,0,.07);--transition:all .2s cubic-bezier(.4,0,.2,1)}
+    [data-theme="dark"]{--bg:#0D1117;--surface:#161B22;--surface-2:#1C2333;--text:#F0F6FC;--text-muted:#8B949E;--border:#30363D;--shadow:0 4px 24px rgba(0,0,0,.4)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+    body{font-family:'DM Sans',system-ui,sans-serif;font-size:16px;line-height:1.6;background-color:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;transition:background-color .3s ease,color .3s ease}
+    h1,h2,h3,h4,h5,h6{font-family:'Sora',system-ui,sans-serif;font-weight:700;line-height:1.25;color:var(--text)}
+    a{color:var(--primary);text-decoration:none}a:hover{text-decoration:underline}
+    img,video{max-width:100%;display:block}
+    button{font-family:'DM Sans',system-ui,sans-serif}
+    .card{background-color:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);transition:var(--transition)}
+    .card:hover{transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,.13)}
+    [data-theme="dark"] .card:hover{box-shadow:0 8px 32px rgba(0,0,0,.55)}
+    .btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background-color:var(--primary);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap}
+    .btn-primary:hover{filter:brightness(1.1);transform:scale(1.02)}.btn-primary:active{transform:scale(.98)}.btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
+    .btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background-color:transparent;color:var(--text);border:1.5px solid var(--border);border-radius:10px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap}
+    .btn-secondary:hover{background-color:var(--surface-2)}.btn-secondary:active{transform:scale(.98)}.btn-secondary:disabled{opacity:.55;cursor:not-allowed}
+    .btn-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;background-color:var(--danger);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:15px;font-weight:600;cursor:pointer;transition:var(--transition);white-space:nowrap}
+    .btn-danger:hover{filter:brightness(1.1);transform:scale(1.02)}.btn-danger:active{transform:scale(.98)}.btn-danger:disabled{opacity:.55;cursor:not-allowed;transform:none;filter:none}
+    .input{display:block;width:100%;background-color:var(--surface-2);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;font-family:'DM Sans',system-ui,sans-serif;font-size:15px;color:var(--text);transition:var(--transition);outline:none;appearance:none;-webkit-appearance:none}
+    .input::placeholder{color:var(--text-muted)}.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(0,200,150,.35)}.input:disabled{opacity:.6;cursor:not-allowed}
+    .badge{display:inline-flex;align-items:center;background-color:var(--primary-dim);color:var(--primary);font-size:12px;font-weight:600;border-radius:20px;padding:3px 10px;white-space:nowrap;line-height:1.4}
+    .animate-spin{animation:spin 1s linear infinite;display:inline-block}
+    .skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 50%,var(--surface-2) 75%);background-size:800px 100%;animation:shimmer 1.5s infinite linear;border-radius:var(--radius)}
+    .modal-overlay{position:fixed;inset:0;background-color:rgba(0,0,0,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal-box{background-color:var(--surface);border-radius:18px;padding:28px;max-width:540px;width:90%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.2);position:relative}
+    [data-theme="dark"] .modal-box{box-shadow:0 24px 64px rgba(0,0,0,.6)}
+    .avatar{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:16px;color:#fff;flex-shrink:0;user-select:none}
+    .divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+    .desktop-only{display:block}.mobile-only{display:none !important}
+    .app-main{padding-top:60px;min-height:100vh}
+    .mobile-search-bar{display:none}
+    .ls-shake{animation:shake .4s ease-in-out}
+    .pill{padding:7px 16px;font-size:13px;font-weight:600;border-radius:20px;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text-muted);cursor:pointer;transition:all .15s ease;font-family:'DM Sans',system-ui,sans-serif}
+    .pill.active{background:var(--primary);border-color:var(--primary);color:#fff}
+    @media(max-width:768px){
+      body{font-size:15px}.card{border-radius:10px}.modal-box{padding:20px;border-radius:14px;width:95%}
+      .btn-primary,.btn-secondary,.btn-danger{padding:9px 16px;font-size:14px}.input{padding:9px 12px;font-size:14px}
+      .desktop-only{display:none !important}.mobile-only{display:flex !important}
+      .app-main{padding-top:0;padding-bottom:72px}.mobile-search-bar{display:block}
     }
-  </script>
+  </style>
 </head>
 <body>
-  <p>DocVault loading...</p>
+  <div id="app"></div>
+  <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script>
+'use strict';
+
+/* ── ICONS ─────────────────────────────────────────────────────────────────── */
+const ICONS={
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  moon:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  archive:'<polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>',
+  home:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  filetext:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  arrowleft:'<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  chevrondown:'<polyline points="6 9 12 15 18 9"/>',
+  chevronright:'<polyline points="9 18 15 12 9 6"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  uploadcloud:'<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  trash2:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>',
+};
+function ic(name,size=16,color='currentColor'){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">${ICONS[name]||''}</svg>`;
+}
+
+/* ── HELPERS ────────────────────────────────────────────────────────────────── */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmtSize(b){if(b==null)return'';if(b<1048576)return`${(b/1024).toFixed(1)} KB`;return`${(b/1048576).toFixed(2)} MB`;}
+function fmtDate(iso){if(!iso)return'';return new Date(iso).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'});}
+function lbl(){return 'display:block;font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:6px;font-family:"DM Sans",system-ui,sans-serif;';}
+
+/* ── STORAGE ────────────────────────────────────────────────────────────────── */
+const metaStore=localforage.createInstance({name:'docvault',storeName:'metadata'});
+const fileStore=localforage.createInstance({name:'docvault',storeName:'files'});
+const peopleStore=localforage.createInstance({name:'docvault',storeName:'people'});
+
+const FOLDERS=['Identity','Education','Medical','Financial','Photos','Others'];
+const RELATIONSHIPS=['Self','Spouse','Father','Mother','Child','Sibling','Other'];
+const REL_COLORS={Self:'hsl(168,70%,42%)',Spouse:'hsl(330,70%,55%)',Father:'hsl(220,70%,55%)',Mother:'hsl(345,65%,58%)',Child:'hsl(45,85%,50%)',Sibling:'hsl(260,60%,60%)',Other:'hsl(200,60%,50%)'};
+
+function getInitials(name){const w=name.trim().split(/\s+/);return(w.length===1?w[0].slice(0,2):(w[0][0]+w[w.length-1][0])).toUpperCase();}
+function safeSeg(s){return s.replace(/[/\\?%*:|"<>]/g,'_');}
+async function allVals(store){const r=[];await store.iterate(v=>{r.push(v);});return r;}
+
+async function addPerson(name,rel,prof={}){
+  const id=crypto.randomUUID();
+  const p={id,name:name.trim(),relationship:rel,initials:getInitials(name),
+            profile:{phone:prof.phone||'',dob:prof.dob||'',bloodGroup:prof.bloodGroup||'',address:prof.address||''},
+            createdAt:new Date().toISOString()};
+  await peopleStore.setItem(id,p);return p;
+}
+async function getPeople(){const p=await allVals(peopleStore);return p.sort((a,b)=>a.name.localeCompare(b.name));}
+async function deletePerson(id){const d=await getDocsByPerson(id);await Promise.all(d.map(doc=>deleteDocument(doc.id)));await peopleStore.removeItem(id);}
+async function saveDocument(blob,name,folder,personId,remark=''){
+  const id=crypto.randomUUID();
+  const meta={id,name,fileName:name,fileType:blob.type,fileSize:blob.size,uploadDate:new Date().toISOString(),personId,folderName:folder,remark};
+  await metaStore.setItem(id,meta);await fileStore.setItem(id,blob);return meta;
+}
+async function getDocsByPerson(pid){const a=await allVals(metaStore);return a.filter(d=>d.personId===pid);}
+async function getAllDocs(){return allVals(metaStore);}
+async function getDocumentFile(id){return fileStore.getItem(id);}
+async function deleteDocument(id){await Promise.all([metaStore.removeItem(id),fileStore.removeItem(id)]);}
+async function renameDocument(id,name){const e=await metaStore.getItem(id);if(!e)throw new Error('Not found');const u={...e,name,fileName:name};await metaStore.setItem(id,u);return u;}
+async function updateRemark(id,remark){const e=await metaStore.getItem(id);if(!e)throw new Error('Not found');const u={...e,remark};await metaStore.setItem(id,u);return u;}
+async function checkDuplicate(pid,fileName,fileSize){const d=await getDocsByPerson(pid);return d.some(doc=>doc.fileName===fileName||doc.fileSize===fileSize);}
+
+async function exportVaultAsZip(){
+  const zip=new JSZip();const people=await getPeople();let count=0;
+  await Promise.all(people.map(async p=>{
+    const docs=await getDocsByPerson(p.id);
+    await Promise.all(docs.map(async doc=>{
+      const b=await getDocumentFile(doc.id);if(!b)return;
+      zip.file(`${safeSeg(p.name)}/${safeSeg(doc.folderName)}/${safeSeg(doc.fileName)}`,b);count++;
+    }));
+  }));
+  const zb=await zip.generateAsync({type:'blob'});saveAs(zb,'DocVault_Backup.zip');return{success:true,count};
+}
+
+/* ── I18N ───────────────────────────────────────────────────────────────────── */
+const TR={
+  en:{search_placeholder:'Search documents\u2026',upload_doc:'Upload Document',save_vault:'Save Vault',add_person:'Add Person',no_docs:'No documents found.',dark_mode:'Dark Mode',light_mode:'Light Mode',extracting:'Extracting\u2026',remark:'Remark',download:'Download',delete:'Delete',cancel:'Cancel',save:'Save',close:'Close'},
+  hi:{search_placeholder:'\u0926\u0938\u094d\u0924\u093e\u0935\u0947\u091c\u093c \u0916\u094b\u091c\u0947\u0902\u2026',upload_doc:'\u0926\u0938\u094d\u0924\u093e\u0935\u0947\u091c\u093c \u0905\u092a\u0932\u094b\u0921 \u0915\u0930\u0947\u0902',save_vault:'\u0935\u0949\u0932\u094d\u091f \u0938\u0939\u0947\u091c\u0947\u0902',add_person:'\u0935\u094d\u092f\u0915\u094d\u0924\u093f \u091c\u094b\u095c\u0947\u0902',no_docs:'\u0915\u094b\u0908 \u0926\u0938\u094d\u0924\u093e\u0935\u0947\u091c\u093c \u0928\u0939\u0940\u0902 \u092e\u093f\u0932\u093e\u0964',dark_mode:'\u0921\u093e\u0930\u094d\u0915 \u092e\u094b\u0921',light_mode:'\u0932\u093e\u0907\u091f \u092e\u094b\u0921',extracting:'\u0928\u093f\u0915\u093e\u0932 \u0930\u0939\u0947 \u0939\u0948\u0902\u2026',remark:'\u091f\u093f\u092a\u094d\u092a\u0923\u0940',download:'\u0921\u093e\u0909\u0928\u0932\u094b\u0921',delete:'\u0939\u091f\u093e\u090f\u0902',cancel:'\u0930\u0926\u094d\u0926 \u0915\u0930\u0947\u0902',save:'\u0938\u0939\u0947\u091c\u0947\u0902',close:'\u092c\u0902\u0926 \u0915\u0930\u0947\u0902'},
+};
+function t(k,lang='en'){return(TR[lang]||{})[k]||TR.en[k]||k;}
+
+/* ── CONVERTERS ─────────────────────────────────────────────────────────────── */
+async function resizeImageForExport(blob,format,preset){
+  const PS={passport:{width:413,height:531},stamp:{width:150,height:150},a4:{width:2480,height:3508}};
+  const bm=await createImageBitmap(blob);
+  let w=bm.width,h=bm.height;
+  if(preset!=='original'&&PS[preset]){w=PS[preset].width;h=PS[preset].height;}
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  c.getContext('2d').drawImage(bm,0,0,w,h);bm.close();
+  return new Promise((res,rej)=>c.toBlob(r=>r?res(r):rej(new Error('toBlob failed')),format));
+}
+
+async function blobToPdfBlob(imgBlob){
+  const bm=await createImageBitmap(imgBlob);const{width:W,height:H}=bm;
+  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(bm,0,0);bm.close();
+  const b64=c.toDataURL('image/jpeg',0.92).split(',')[1];
+  const bs=atob(b64);const ib=new Uint8Array(bs.length);
+  for(let i=0;i<bs.length;i++)ib[i]=bs.charCodeAt(i);
+  const enc=new TextEncoder();const IL=ib.length;
+  const o1='1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+  const o2='2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+  const o3=`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Contents 4 0 R /Resources << /XObject << /Im0 5 0 R >> >> >>\nendobj\n`;
+  const cs=`q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q`;
+  const o4=`4 0 obj\n<< /Length ${cs.length} >>\nstream\n${cs}\nendstream\nendobj\n`;
+  const o5h=`5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${IL} >>\nstream\n`;
+  const o5f='\nendstream\nendobj\n';
+  const hd=enc.encode('%PDF-1.4\n'),b1=enc.encode(o1),b2=enc.encode(o2),b3=enc.encode(o3),b4=enc.encode(o4),b5h=enc.encode(o5h),b5f=enc.encode(o5f);
+  const parts=[b1,b2,b3,b4,b5h];const offs=[];let off=hd.length;
+  for(const p of parts){offs.push(off);off+=p.length;}
+  const xrOff=off+ib.length+b5f.length;
+  const xr='xref\n0 6\n0000000000 65535 f \n'+offs.map(o=>`${String(o).padStart(10,'0')} 00000 n \n`).join('')+`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrOff}\n%%EOF\n`;
+  const xrb=enc.encode(xr);
+  const all=[hd,b1,b2,b3,b4,b5h,ib,b5f,xrb];
+  const tot=all.reduce((s,p)=>s+p.length,0);const out=new Uint8Array(tot);let pos=0;
+  for(const p of all){out.set(p,pos);pos+=p.length;}
+  return new Blob([out],{type:'application/pdf'});
+}
+
+async function pdfToImages(pdfBlob,scale=1.5){
+  if(!window.pdfjsLib){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload=res;s.onerror=rej;document.head.appendChild(s);
+    });
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  const ab=await pdfBlob.arrayBuffer();
+  const pdf=await window.pdfjsLib.getDocument({data:ab}).promise;
+  const blobs=[];
+  try{
+    for(let i=1;i<=pdf.numPages;i++){
+      const pg=await pdf.getPage(i);const vp=pg.getViewport({scale});
+      const c=document.createElement('canvas');c.width=vp.width;c.height=vp.height;
+      await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+      const b=await new Promise((res,rej)=>c.toBlob(r=>r?res(r):rej(new Error('toBlob')),'image/png'));
+      blobs.push(b);
+    }
+  }finally{await pdf.destroy();}
+  return blobs;
+}
+
+/* ── STATE ──────────────────────────────────────────────────────────────────── */
+const S={
+  isUnlocked:sessionStorage.getItem('dv_auth')==='true',
+  theme:localStorage.getItem('dv_theme')||'light',
+  lang:localStorage.getItem('dv_lang')||'en',
+  view:'home',activePerson:null,
+  people:[],docCounts:{},
+  searchQuery:'',searchResults:[],
+  exporting:false,openFolders:new Set(),
+};
+function applyTheme(){document.documentElement.setAttribute('data-theme',S.theme);localStorage.setItem('dv_theme',S.theme);}
+
+/* ── OBJECT URLS ────────────────────────────────────────────────────────────── */
+const _pageUrls=[];
+function trackUrl(u){_pageUrls.push(u);}
+function revokePageUrls(){_pageUrls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});_pageUrls.length=0;}
+
+/* ── COUNT-UP ───────────────────────────────────────────────────────────────── */
+function countUp(el,target,dur=900){
+  let start=null;
+  function step(ts){if(!start)start=ts;const p=Math.min((ts-start)/dur,1);if(el&&el.isConnected){el.textContent=Math.round(p*target);if(p<1)requestAnimationFrame(step);}}
+  requestAnimationFrame(step);
+}
+
+/* ── LOGIN SCREEN ───────────────────────────────────────────────────────────── */
+function showLogin(){
+  document.getElementById('app').innerHTML=`
+    <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 40%,#1a2a3a 0%,#0D1117 70%);padding:24px;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:24px;width:100%;max-width:400px;">
+        <div style="animation:pulse 2.4s ease-in-out infinite;color:#00C896;display:flex;">${ic('shield',72,'#00C896')}</div>
+        <h1 style="font-family:'Sora',system-ui,sans-serif;font-size:2.6rem;font-weight:700;color:#F0F6FC;letter-spacing:-.5px;text-align:center;">DocVault</h1>
+        <p style="font-size:1rem;color:#8B949E;text-align:center;margin-top:-12px;">Your documents. Private. Always.</p>
+        <form id="lf" style="width:100%;display:flex;flex-direction:column;gap:12px;">
+          <div id="pw-wrap" style="display:flex;flex-direction:column;gap:8px;">
+            <input id="pw" type="password" class="input" placeholder="Enter password" autocomplete="current-password"
+              style="background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);color:#F0F6FC;font-size:15px;padding:12px 16px;" />
+            <p id="pw-err" style="color:#EF4444;font-size:13px;display:none;"></p>
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%;padding:12px;font-size:16px;">Unlock</button>
+        </form>
+      </div>
+    </div>`;
+  const pw=document.getElementById('pw'),err=document.getElementById('pw-err'),wrap=document.getElementById('pw-wrap');
+  setTimeout(()=>pw&&pw.focus(),50);
+  document.getElementById('lf').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(pw.value==='vault2025'){
+      sessionStorage.setItem('dv_auth','true');S.isUnlocked=true;initApp();
+    }else{
+      err.textContent='Incorrect password';err.style.display='block';
+      pw.style.border='1.5px solid #EF4444';
+      wrap.classList.remove('ls-shake');void wrap.offsetWidth;wrap.classList.add('ls-shake');
+      wrap.addEventListener('animationend',()=>wrap.classList.remove('ls-shake'),{once:true});
+      pw.focus();
+    }
+  });
+  pw.addEventListener('input',()=>{err.style.display='none';pw.style.border='1.5px solid rgba(255,255,255,.12)';});
+}
+
+/* ── SHELL ──────────────────────────────────────────────────────────────────── */
+function buildShell(){
+  document.getElementById('app').innerHTML=`
+    <div id="shell" style="background:var(--bg);min-height:100vh;">
+      <nav id="dknav" class="desktop-only" style="position:fixed;top:0;left:0;right:0;height:60px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;z-index:200;box-shadow:var(--shadow);">
+        <button id="n-logo" style="display:flex;align-items:center;gap:8px;flex-shrink:0;background:none;border:none;cursor:pointer;padding:0;" title="Home">
+          ${ic('shield',22,'var(--primary)')}
+          <span style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.1rem;color:var(--text);">DocVault</span>
+        </button>
+        <div style="flex:1;max-width:520px;margin:0 auto;position:relative;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;">${ic('search',15,'var(--text-muted)')}</span>
+          <input id="n-search" class="input" placeholder="${esc(t('search_placeholder',S.lang))}" style="padding-left:36px;height:38px;font-size:14px;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <button id="n-lang" class="btn-secondary" style="padding:7px 14px;font-size:13px;font-weight:700;">${S.lang==='en'?'\u0939\u093f':'EN'}</button>
+          <button id="n-theme" class="btn-secondary" style="padding:8px 12px;">${S.theme==='light'?ic('moon',16):ic('sun',16)}</button>
+          <button id="n-export" class="btn-secondary" style="padding:8px 14px;font-size:13px;gap:6px;display:inline-flex;align-items:center;">${ic('archive',15)} ${esc(t('save_vault',S.lang))}</button>
+        </div>
+      </nav>
+      <main id="content" class="app-main"></main>
+      <nav id="mobnav" class="mobile-only" style="position:fixed;bottom:0;left:0;right:0;height:64px;background:var(--surface);border-top:1px solid var(--border);z-index:200;box-shadow:0 -2px 16px rgba(0,0,0,.07);align-items:center;justify-content:space-around;">
+        <button id="mn-home" style="${mnStyle(true)}">${ic('home',22)}<span style="font-size:10px;font-weight:600;">Home</span></button>
+        <button id="mn-search" style="${mnStyle(false)}">${ic('search',22)}<span style="font-size:10px;font-weight:600;">Search</span></button>
+        <button id="mn-upload" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;border:none;background:none;cursor:pointer;flex:1;padding-bottom:6px;gap:2px;" aria-label="Upload">
+          <div style="width:46px;height:46px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,200,150,.4);">${ic('plus',22,'#fff')}</div>
+        </button>
+        <button id="mn-save" style="${mnStyle(false)}">${ic('archive',22)}<span style="font-size:10px;font-weight:600;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(t('save_vault',S.lang))}</span></button>
+      </nav>
+    </div>`;
+  wireNav();
+}
+
+function mnStyle(active){return `display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;flex:1;padding:8px 0;gap:3px;color:${active?'var(--primary)':'var(--text-muted)'};transition:color .15s ease;`;}
+
+function wireNav(){
+  document.getElementById('n-logo').onclick=()=>goView('home',null);
+  document.getElementById('mn-home').onclick=()=>goView('home',null);
+  document.getElementById('mn-search').onclick=()=>goView('search',null);
+  document.getElementById('mn-upload').onclick=()=>{if(S.view==='person'&&S.activePerson)openUpload(S.activePerson);else goView('home',null);};
+  document.getElementById('mn-save').onclick=doExport;
+  document.getElementById('n-export').onclick=doExport;
+  document.getElementById('n-lang').onclick=()=>{S.lang=S.lang==='en'?'hi':'en';localStorage.setItem('dv_lang',S.lang);refreshNav();};
+  document.getElementById('n-theme').onclick=()=>{S.theme=S.theme==='light'?'dark':'light';applyTheme();refreshNav();};
+  let searchTimer=null;
+  document.getElementById('n-search').addEventListener('input',e=>{
+    const v=e.target.value;S.searchQuery=v;clearTimeout(searchTimer);
+    if(!v.trim()){S.searchResults=[];if(S.view==='search')renderContent();return;}
+    if(S.view!=='search'){S.view='search';S.activePerson=null;renderContent();refreshMobNav();}
+    searchTimer=setTimeout(async()=>{
+      const docs=await getAllDocs();const q=v.toLowerCase();
+      S.searchResults=docs.filter(d=>d.name.toLowerCase().includes(q));
+      if(S.view==='search')renderContent();
+    },300);
+  });
+}
+
+function refreshNav(){
+  const ln=document.getElementById('n-lang');if(ln)ln.textContent=S.lang==='en'?'\u0939\u093f':'EN';
+  const th=document.getElementById('n-theme');if(th)th.innerHTML=S.theme==='light'?ic('moon',16):ic('sun',16);
+  const sr=document.getElementById('n-search');if(sr)sr.placeholder=t('search_placeholder',S.lang);
+  const ex=document.getElementById('n-export');if(ex){ex.disabled=S.exporting;ex.innerHTML=`${ic('archive',15)} ${S.exporting?'Exporting\u2026':esc(t('save_vault',S.lang))}`;}
+  refreshMobNav();
+}
+function refreshMobNav(){
+  const mh=document.getElementById('mn-home');if(mh)mh.style.color=S.view==='home'?'var(--primary)':'var(--text-muted)';
+  const ms=document.getElementById('mn-search');if(ms)ms.style.color=S.view==='search'?'var(--primary)':'var(--text-muted)';
+  const sv=document.getElementById('mn-save');
+  if(sv){sv.disabled=S.exporting;sv.style.opacity=S.exporting?'.5':'1';const sp=sv.querySelector('span');if(sp)sp.textContent=S.exporting?'Exporting\u2026':t('save_vault',S.lang);}
+}
+
+async function doExport(){
+  S.exporting=true;refreshNav();
+  try{await exportVaultAsZip();}
+  catch(e){alert(`Export failed: ${e.message}`);}
+  finally{S.exporting=false;refreshNav();}
+}
+
+function goView(view,person){
+  revokePageUrls();S.openFolders=new Set();
+  S.view=view;S.activePerson=person;
+  if(view!=='search'){S.searchQuery='';S.searchResults=[];const si=document.getElementById('n-search');if(si)si.value='';}
+  renderContent();refreshMobNav();
+}
+
+function renderContent(){
+  const el=document.getElementById('content');if(!el)return;
+  if(S.view==='home')renderDash(el);
+  else if(S.view==='person'&&S.activePerson)renderPersonVault(el);
+  else if(S.view==='search')renderSearch(el);
+}
+
+/* ── DASHBOARD ──────────────────────────────────────────────────────────────── */
+async function loadDocCounts(){
+  try{const d=await getAllDocs();const c={};d.forEach(doc=>{c[doc.personId]=(c[doc.personId]||0)+1;});S.docCounts=c;}catch(e){}
+}
+
+function renderDash(el){
+  const ppl=S.people;const totalDocs=Object.values(S.docCounts).reduce((s,n)=>s+n,0);
+  el.innerHTML=`
+    <div style="padding:24px;max-width:1100px;margin:0 auto;">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:32px;">
+        <div class="card" style="padding:20px 28px;display:flex;align-items:center;gap:16px;min-width:180px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ic('users',20,'var(--primary)')}</div>
+          <div><p id="st-ppl" style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.8rem;color:var(--text);line-height:1;">0</p><p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Total People</p></div>
+        </div>
+        <div class="card" style="padding:20px 28px;display:flex;align-items:center;gap:16px;min-width:180px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:var(--primary-dim);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ic('filetext',20,'var(--primary)')}</div>
+          <div><p id="st-docs" style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.8rem;color:var(--text);line-height:1;">0</p><p style="font-size:13px;color:var(--text-muted);margin-top:4px;">Total Documents</p></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap;">
+        <h2 style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.25rem;color:var(--text);">People</h2>
+        <button id="dash-add" class="btn-primary">${ic('plus',16)} ${esc(t('add_person',S.lang))}</button>
+      </div>
+      <div id="people-grid">${renderPeopleGrid(ppl)}</div>
+    </div>`;
+  const sp=document.getElementById('st-ppl'),sd=document.getElementById('st-docs');
+  if(sp)countUp(sp,ppl.length);if(sd)countUp(sd,totalDocs);
+  document.getElementById('dash-add').onclick=openAddPerson;
+  attachPersonCardEvents();
+}
+
+function renderPeopleGrid(ppl){
+  if(!ppl.length)return`
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 24px;gap:16px;color:var(--text-muted);text-align:center;">
+      ${ic('users',56,'var(--text-muted)')}
+      <p style="font-family:'Sora',system-ui,sans-serif;font-weight:600;font-size:1.1rem;margin-top:8px;">No people yet</p>
+      <p style="font-size:14px;">Add a person to start organising their documents.</p>
+      <button class="btn-primary" id="empty-add">${ic('plus',16)} Add your first person</button>
+    </div>`;
+  return`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;">${ppl.map(personCardHTML).join('')}</div>`;
+}
+
+function personCardHTML(p){
+  const color=REL_COLORS[p.relationship]||REL_COLORS.Other;
+  const cnt=S.docCounts[p.id]||0;
+  return`
+    <div class="card person-card" data-pid="${esc(p.id)}" style="cursor:pointer;padding:20px;position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;user-select:none;">
+      <button class="del-person" data-pid="${esc(p.id)}" title="Remove person" style="position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;border:none;background:var(--danger);color:#fff;cursor:pointer;padding:0;opacity:0;display:flex;align-items:center;justify-content:center;transition:opacity .2s ease;">${ic('x',13,'#fff')}</button>
+      <div class="avatar" style="width:56px;height:56px;font-size:18px;background-color:${color};">${esc(p.initials)}</div>
+      <p style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:15px;color:var(--text);line-height:1.3;">${esc(p.name)}</p>
+      <span class="badge">${esc(p.relationship)}</span>
+      <p style="font-size:12px;color:var(--text-muted);">${cnt} ${cnt===1?'document':'documents'}</p>
+    </div>`;
+}
+
+function attachPersonCardEvents(){
+  const ea=document.getElementById('empty-add');if(ea)ea.onclick=openAddPerson;
+  document.querySelectorAll('.person-card').forEach(card=>{
+    const delBtn=card.querySelector('.del-person');
+    card.addEventListener('mouseenter',()=>{if(delBtn)delBtn.style.opacity='1';card.style.outline='2px solid var(--primary)';card.style.outlineOffset='2px';});
+    card.addEventListener('mouseleave',()=>{if(delBtn)delBtn.style.opacity='0';card.style.outline='2px solid transparent';});
+    card.addEventListener('click',e=>{
+      if(e.target.closest('.del-person'))return;
+      const pid=card.dataset.pid;const p=S.people.find(x=>x.id===pid);
+      if(p)goView('person',p);
+    });
+  });
+  document.querySelectorAll('.del-person').forEach(btn=>{
+    btn.addEventListener('click',async e=>{
+      e.stopPropagation();
+      const pid=btn.dataset.pid;const p=S.people.find(x=>x.id===pid);if(!p)return;
+      if(!confirm(`Delete ${p.name}? This will remove all their documents too.`))return;
+      await deletePerson(pid);
+      S.people=S.people.filter(x=>x.id!==pid);delete S.docCounts[pid];
+      const grid=document.getElementById('people-grid');
+      if(grid){grid.innerHTML=renderPeopleGrid(S.people);attachPersonCardEvents();}
+      const sp=document.getElementById('st-ppl');if(sp)sp.textContent=S.people.length;
+    });
+  });
+}
+
+/* ── ADD PERSON MODAL ───────────────────────────────────────────────────────── */
+function openAddPerson(){
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`
+    <div class="modal-box" style="max-width:480px;">
+      <h3 style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.15rem;margin-bottom:20px;color:var(--text);">Add Person</h3>
+      <form id="ap-form" style="display:flex;flex-direction:column;gap:14px;">
+        <div><label style="${lbl()}">Name *</label><input class="input" name="apname" placeholder="Full name" required /></div>
+        <div><label style="${lbl()}">Relationship</label>
+          <select class="input" name="aprel">${RELATIONSHIPS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select>
+        </div>
+        <div><label style="${lbl()}">Phone</label><input class="input" name="apphone" placeholder="Phone number" type="tel" /></div>
+        <div><label style="${lbl()}">Date of Birth</label><input class="input" name="apdob" type="date" /></div>
+        <div><label style="${lbl()}">Blood Group</label><input class="input" name="apbg" placeholder="e.g. A+" /></div>
+        <div><label style="${lbl()}">Address</label><textarea class="input" name="apaddr" placeholder="Address" rows="3" style="resize:vertical;"></textarea></div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+          <button type="button" id="ap-cancel" class="btn-secondary">${esc(t('cancel',S.lang))}</button>
+          <button type="submit" id="ap-submit" class="btn-primary">${esc(t('add_person',S.lang))}</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(ov);document.body.style.overflow='hidden';
+  function close(){document.body.removeChild(ov);document.body.style.overflow='';}
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  document.getElementById('ap-cancel').onclick=close;
+  function onKey(e){if(e.key==='Escape'){close();document.removeEventListener('keydown',onKey);}}
+  document.addEventListener('keydown',onKey);
+  setTimeout(()=>{const n=ov.querySelector('[name="apname"]');if(n)n.focus();},50);
+  document.getElementById('ap-form').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const btn=document.getElementById('ap-submit');btn.disabled=true;btn.textContent='Saving\u2026';
+    const fd=new FormData(e.target);
+    try{
+      const p=await addPerson(fd.get('apname'),fd.get('aprel'),{phone:fd.get('apphone'),dob:fd.get('apdob'),bloodGroup:fd.get('apbg'),address:fd.get('apaddr')});
+      S.people=[...S.people,p].sort((a,b)=>a.name.localeCompare(b.name));
+      close();document.removeEventListener('keydown',onKey);renderContent();
+    }catch(err){alert(err.message);}
+    finally{btn.disabled=false;btn.textContent=t('add_person',S.lang);}
+  });
+}
+
+/* ── PERSON VAULT VIEW ──────────────────────────────────────────────────────── */
+async function renderPersonVault(el){
+  const p=S.activePerson;const color=REL_COLORS[p.relationship]||REL_COLORS.Other;
+  el.innerHTML=`
+    <div style="max-width:900px;margin:0 auto;padding:24px;">
+      <button id="pv-back" class="btn-secondary" style="margin-bottom:20px;padding:8px 14px;font-size:14px;">${ic('arrowleft',16)} Back</button>
+      <div class="card" style="padding:24px;margin-bottom:24px;display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+        <div class="avatar" style="width:64px;height:64px;font-size:22px;background-color:${color};">${esc(p.initials)}</div>
+        <div style="flex:1;min-width:180px;">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">
+            <h2 style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.35rem;color:var(--text);">${esc(p.name)}</h2>
+            <span class="badge">${esc(p.relationship)}</span>
+          </div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            ${p.profile&&p.profile.phone?`<span style="font-size:13px;color:var(--text-muted);">&#128222; ${esc(p.profile.phone)}</span>`:''}
+            ${p.profile&&p.profile.dob?`<span style="font-size:13px;color:var(--text-muted);">&#127874; ${esc(p.profile.dob)}</span>`:''}
+            ${p.profile&&p.profile.bloodGroup?`<span style="font-size:13px;color:var(--text-muted);">&#129656; ${esc(p.profile.bloodGroup)}</span>`:''}
+          </div>
+        </div>
+        <button id="pv-upload" class="btn-primary" style="flex-shrink:0;align-self:flex-start;">${ic('plus',16)} ${esc(t('upload_doc',S.lang))}</button>
+      </div>
+      <div id="pv-docs">
+        <div class="skeleton" style="height:72px;border-radius:14px;margin-bottom:12px;"></div>
+        <div class="skeleton" style="height:72px;border-radius:14px;"></div>
+      </div>
+    </div>`;
+  document.getElementById('pv-back').onclick=()=>goView('home',null);
+  document.getElementById('pv-upload').onclick=()=>openUpload(p);
+  try{
+    const docs=await getDocsByPerson(p.id);
+    if(!S.openFolders.size){[...new Set(docs.map(d=>d.folderName))].forEach(f=>S.openFolders.add(f));}
+    renderFolders(docs,p);
+  }catch(e){const d=document.getElementById('pv-docs');if(d)d.innerHTML=`<p style="color:var(--danger);padding:24px;">${esc(e.message)}</p>`;}
+}
+
+function renderFolders(docs,person){
+  const container=document.getElementById('pv-docs');if(!container)return;
+  if(!docs.length){
+    container.innerHTML=`
+      <div style="text-align:center;padding:56px 24px;color:var(--text-muted);">
+        ${ic('filetext',52,'var(--text-muted)')}
+        <p style="font-family:'Sora',system-ui,sans-serif;font-weight:600;font-size:1.05rem;margin-top:16px;">No documents yet</p>
+        <p style="font-size:14px;margin-top:6px;">Upload a document to get started.</p>
+        <button id="pv-upload2" class="btn-primary" style="margin-top:20px;">${ic('plus',16)} ${esc(t('upload_doc',S.lang))}</button>
+      </div>`;
+    const u2=document.getElementById('pv-upload2');if(u2)u2.onclick=()=>openUpload(person||S.activePerson);
+    return;
+  }
+  const grouped={};docs.forEach(d=>{if(!grouped[d.folderName])grouped[d.folderName]=[];grouped[d.folderName].push(d);});
+  container.innerHTML=`<div style="display:flex;flex-direction:column;gap:16px;">${
+    Object.entries(grouped).map(([folder,fdocs])=>{
+      const open=S.openFolders.has(folder);
+      return`
+        <div class="card" style="overflow:hidden;padding:0;">
+          <button class="folder-toggle" data-folder="${esc(folder)}" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:none;border:none;cursor:pointer;color:var(--text);${open?'border-bottom:1px solid var(--border);':''}">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-family:'Sora',system-ui,sans-serif;font-weight:600;font-size:15px;">${esc(folder)}</span>
+              <span style="font-size:11px;background:var(--primary-dim);color:var(--primary);border-radius:12px;padding:2px 8px;font-weight:600;">${fdocs.length}</span>
+            </div>
+            ${open?ic('chevrondown',18):ic('chevronright',18)}
+          </button>
+          ${open?`<div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">${fdocs.map(docCardHTML).join('')}</div>`:``}
+        </div>`;
+    }).join('')
+  }</div>`;
+  document.querySelectorAll('.folder-toggle').forEach(btn=>{
+    btn.onclick=()=>{
+      const f=btn.dataset.folder;
+      if(S.openFolders.has(f))S.openFolders.delete(f);else S.openFolders.add(f);
+      renderFolders(docs,person);
+    };
+  });
+  document.querySelectorAll('.doc-card').forEach(card=>{
+    card.onclick=async()=>{const doc=docs.find(d=>d.id===card.dataset.docid);if(doc)await openViewer(doc,docs,person);};
+  });
+  loadThumbnails(docs);
+}
+
+function docCardHTML(doc){
+  const isImg=doc.fileType&&doc.fileType.startsWith('image/');
+  return`
+    <div class="card doc-card" data-docid="${esc(doc.id)}" style="cursor:pointer;padding:12px;display:flex;gap:12px;align-items:center;">
+      <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--surface-2);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+        ${isImg?`<img data-thumb="${esc(doc.id)}" alt="${esc(doc.name)}" style="width:100%;height:100%;object-fit:cover;display:none;" /><span data-thumb-ph="${esc(doc.id)}">${ic('filetext',24,'var(--primary)')}</span>`:ic('filetext',24,'var(--primary)')}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <p style="font-weight:600;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(doc.name)}</p>
+        <div style="display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--text-muted);">${fmtDate(doc.uploadDate)}</span>
+          <span style="font-size:12px;color:var(--text-muted);">${fmtSize(doc.fileSize)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function loadThumbnails(docs){
+  for(const doc of docs){
+    if(!doc.fileType||!doc.fileType.startsWith('image/'))continue;
+    try{
+      const blob=await getDocumentFile(doc.id);if(!blob)continue;
+      const url=URL.createObjectURL(blob);trackUrl(url);
+      const img=document.querySelector(`[data-thumb="${doc.id}"]`);
+      const ph=document.querySelector(`[data-thumb-ph="${doc.id}"]`);
+      if(img){img.src=url;img.style.display='block';}
+      if(ph)ph.style.display='none';
+    }catch(e){}
+  }
+}
+
+/* ── UPLOAD MODAL ───────────────────────────────────────────────────────────── */
+function openUpload(person){
+  let selFile=null,dupWarn=false,uploading=false;
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`
+    <div class="modal-box" id="up-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h3 style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.15rem;color:var(--text);">Upload Document</h3>
+        <button id="up-close" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">${ic('x',20)}</button>
+      </div>
+      <form id="up-form" style="display:flex;flex-direction:column;gap:16px;">
+        <div id="up-drop" style="border:2px dashed var(--border);border-radius:12px;padding:28px 20px;text-align:center;background:var(--surface-2);transition:all .2s ease;cursor:pointer;">
+          <div>${ic('uploadcloud',32,'var(--primary)')}</div>
+          <p id="up-dt" style="font-weight:600;color:var(--text);font-size:14px;margin-top:8px;">Drag &amp; drop a file here</p>
+          <p style="color:var(--text-muted);font-size:13px;margin-top:4px;">or click to browse</p>
+        </div>
+        <input id="up-file" type="file" style="display:none;" />
+        <input id="up-cam" type="file" accept="image/*" capture="environment" style="display:none;" />
+        <div style="display:flex;gap:10px;">
+          <button type="button" id="up-browse" class="btn-secondary" style="flex:1;">Browse File</button>
+          <button type="button" id="up-photo" class="btn-secondary" style="flex:1;">${ic('camera',16)} Take Photo</button>
+        </div>
+        <div id="up-sizer" style="display:none;background:#FEE2E2;border:1.5px solid #EF4444;border-radius:10px;padding:12px 16px;color:#991B1B;font-size:14px;"></div>
+        <div id="up-dup" style="display:none;background:#FEF9C3;border:1.5px solid #EAB308;border-radius:10px;padding:12px 16px;color:#92400E;font-size:14px;">
+          &#9888;&#65039; A similar document already exists. Upload anyway?
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button type="submit" id="up-dup-yes" class="btn-primary" style="padding:7px 18px;font-size:14px;">Yes, Upload</button>
+            <button type="button" id="up-dup-no" class="btn-secondary" style="padding:7px 18px;font-size:14px;">${esc(t('cancel',S.lang))}</button>
+          </div>
+        </div>
+        <div><label style="${lbl()}">Document Name</label><input id="up-name" class="input" placeholder="e.g. Passport front page" /></div>
+        <div><label style="${lbl()}">Folder</label>
+          <select id="up-folder" class="input">${FOLDERS.map(f=>`<option>${esc(f)}</option>`).join('')}</select>
+        </div>
+        <div><label style="${lbl()}">Remark <span style="font-weight:400;">(optional)</span></label><textarea id="up-remark" class="input" placeholder="Add a note\u2026" rows="3" style="resize:vertical;"></textarea></div>
+        <div id="up-prog" style="display:none;border-radius:8px;overflow:hidden;height:8px;background:var(--border);"><div id="up-bar" style="height:100%;width:0%;background:var(--primary);transition:width .08s ease;border-radius:8px;"></div></div>
+        <div id="up-acts" style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+          <button type="button" id="up-cancel" class="btn-secondary">${esc(t('cancel',S.lang))}</button>
+          <button type="submit" id="up-submit" class="btn-primary" disabled>${esc(t('save',S.lang))}</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(ov);document.body.style.overflow='hidden';
+
+  const drop=document.getElementById('up-drop'),fileInp=document.getElementById('up-file'),camInp=document.getElementById('up-cam');
+  const nameInp=document.getElementById('up-name'),submitBtn=document.getElementById('up-submit');
+  const cancelBtn=document.getElementById('up-cancel'),progBar=document.getElementById('up-bar');
+  const progWrap=document.getElementById('up-prog'),sizeErr=document.getElementById('up-sizer');
+  const dupEl=document.getElementById('up-dup'),actsEl=document.getElementById('up-acts');
+
+  function close(){if(!uploading){document.body.removeChild(ov);document.body.style.overflow='';}}
+  document.getElementById('up-close').onclick=close;cancelBtn.onclick=close;
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+
+  function applyFile(f){
+    if(f.size>52428800){sizeErr.textContent=`\u26a0\ufe0f File too large (${(f.size/1048576).toFixed(1)} MB). Max 50 MB.`;sizeErr.style.display='block';return;}
+    sizeErr.style.display='none';selFile=f;document.getElementById('up-dt').textContent=f.name;
+    drop.style.borderColor='var(--primary)';if(!nameInp.value)nameInp.value=f.name;submitBtn.disabled=false;
+  }
+  drop.onclick=()=>fileInp.click();
+  document.getElementById('up-browse').onclick=()=>fileInp.click();
+  document.getElementById('up-photo').onclick=()=>camInp.click();
+  fileInp.onchange=e=>{if(e.target.files[0])applyFile(e.target.files[0]);};
+  camInp.onchange=e=>{if(e.target.files[0])applyFile(e.target.files[0]);};
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='var(--primary)';drop.style.background='var(--primary-dim)';});
+  drop.addEventListener('dragleave',()=>{drop.style.borderColor='var(--border)';drop.style.background='var(--surface-2)';});
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.style.borderColor='var(--border)';drop.style.background='var(--surface-2)';if(e.dataTransfer.files[0])applyFile(e.dataTransfer.files[0]);});
+  document.getElementById('up-dup-no').onclick=()=>{dupWarn=false;dupEl.style.display='none';actsEl.style.display='flex';};
+
+  async function doUpload(){
+    uploading=true;submitBtn.disabled=true;cancelBtn.disabled=true;progWrap.style.display='block';
+    let prog=0,stopped=false;
+    const iv=setInterval(()=>{if(stopped)return;prog=Math.min(prog+Math.random()*12,95);progBar.style.width=prog+'%';},80);
+    try{
+      await saveDocument(selFile,nameInp.value.trim()||selFile.name,document.getElementById('up-folder').value,person.id,document.getElementById('up-remark').value.trim());
+      stopped=true;clearInterval(iv);progBar.style.width='100%';
+      await new Promise(r=>setTimeout(r,300));
+      await loadDocCounts();
+      document.body.removeChild(ov);document.body.style.overflow='';
+      if(S.view==='person'&&S.activePerson&&S.activePerson.id===person.id){
+        const docs=await getDocsByPerson(person.id);
+        S.openFolders=new Set();[...new Set(docs.map(d=>d.folderName))].forEach(f=>S.openFolders.add(f));
+        renderFolders(docs,person);
+      }
+      S.people=await getPeople();
+    }catch(err){
+      stopped=true;clearInterval(iv);uploading=false;submitBtn.disabled=false;cancelBtn.disabled=false;
+      progWrap.style.display='none';progBar.style.width='0%';alert(`Upload failed: ${err.message}`);
+    }
+  }
+
+  document.getElementById('up-form').addEventListener('submit',async e=>{
+    e.preventDefault();if(!selFile)return;
+    if(!dupWarn){
+      const isDup=await checkDuplicate(person.id,selFile.name,selFile.size);
+      if(isDup){dupWarn=true;dupEl.style.display='block';actsEl.style.display='none';return;}
+    }
+    dupWarn=false;dupEl.style.display='none';actsEl.style.display='flex';
+    await doUpload();
+  });
+
+  function onKey(e){if(e.key==='Escape'&&!uploading){close();document.removeEventListener('keydown',onKey);}}
+  document.addEventListener('keydown',onKey);
+}
+
+/* ── DOCUMENT VIEWER MODAL ──────────────────────────────────────────────────── */
+async function openViewer(docMeta,allDocs,person){
+  let doc={...docMeta};let blob=null;let blobUrl=null;const pdfUrls=[];let ocrLoading=false;
+  const ov=document.createElement('div');ov.className='modal-overlay';
+  ov.innerHTML=`
+    <div class="modal-box" id="vw-box" style="max-width:800px;width:95%;">
+      <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
+          <h3 id="vw-title" title="Click to rename" style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.1rem;color:var(--text);cursor:pointer;border-bottom:1.5px dashed var(--border);display:inline-block;max-width:100%;word-break:break-word;">${esc(doc.name)}</h3>
+          <input id="vw-rename" class="input" value="${esc(doc.name)}" style="display:none;font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.1rem;" />
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center;">
+            <span class="badge">${esc(doc.folderName)}</span>
+            <span style="font-size:12px;color:var(--text-muted);">${fmtDate(doc.uploadDate)}</span>
+            <span style="font-size:12px;color:var(--text-muted);">${fmtSize(doc.fileSize)}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+          <button id="vw-dl" class="btn-secondary" style="padding:8px 14px;font-size:14px;">${ic('download',15)} ${esc(t('download',S.lang))}</button>
+          <button id="vw-close" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">${ic('x',20)}</button>
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div id="vw-preview" style="background:var(--surface-2);border-radius:12px;overflow:auto;max-height:380px;display:flex;flex-direction:column;align-items:center;padding:16px;margin-bottom:20px;">
+        <div class="skeleton" style="width:100%;height:200px;"></div>
+      </div>
+      <div id="vw-ocr-row" style="display:none;margin-bottom:16px;">
+        <button id="vw-ocr" class="btn-secondary" style="font-size:14px;padding:8px 16px;">&#128269; Extract Text (OCR)</button>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="${lbl()}">${esc(t('remark',S.lang))}</label>
+        <textarea id="vw-remark" class="input" rows="4" style="resize:vertical;" placeholder="Add a note or paste extracted text\u2026">${esc(doc.remark||'')}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <button id="vw-saverm" class="btn-primary" style="font-size:14px;padding:8px 18px;">Save Remark</button>
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div id="vw-del-area" style="display:flex;justify-content:flex-end;">
+        <button id="vw-del" class="btn-danger" style="font-size:14px;padding:8px 16px;">${ic('trash2',15)} ${esc(t('delete',S.lang))}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);document.body.style.overflow='hidden';
+
+  function close(){
+    pdfUrls.forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}});
+    if(blobUrl){try{URL.revokeObjectURL(blobUrl);}catch(e){}}
+    document.body.removeChild(ov);document.body.style.overflow='';
+    document.removeEventListener('keydown',onKey);
+  }
+  document.getElementById('vw-close').onclick=close;
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+
+  // Rename
+  const titleEl=document.getElementById('vw-title'),renameInp=document.getElementById('vw-rename');
+  titleEl.onclick=()=>{titleEl.style.display='none';renameInp.style.display='block';renameInp.focus();renameInp.select();};
+  async function commitRename(){
+    const v=renameInp.value.trim();
+    if(!v||v===doc.name){titleEl.style.display='';renameInp.style.display='none';return;}
+    try{doc=await renameDocument(doc.id,v);titleEl.textContent=doc.name;}catch(e){alert(e.message);}
+    titleEl.style.display='';renameInp.style.display='none';
+  }
+  renameInp.addEventListener('blur',commitRename);
+  renameInp.addEventListener('keydown',e=>{if(e.key==='Enter')commitRename();if(e.key==='Escape'){renameInp.value=doc.name;titleEl.style.display='';renameInp.style.display='none';}});
+
+  // Save remark
+  document.getElementById('vw-saverm').onclick=async()=>{
+    const btn=document.getElementById('vw-saverm');btn.disabled=true;btn.textContent='Saving\u2026';
+    try{doc=await updateRemark(doc.id,document.getElementById('vw-remark').value);}catch(e){alert(e.message);}
+    finally{btn.disabled=false;btn.textContent='Save Remark';}
+  };
+
+  // Delete
+  function setupDel(){
+    const delBtn=document.getElementById('vw-del');if(!delBtn)return;
+    delBtn.onclick=()=>{
+      document.getElementById('vw-del-area').innerHTML=`
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:14px;color:var(--text-muted);">Delete this document?</span>
+          <button id="vw-del-yes" class="btn-danger" style="font-size:14px;padding:8px 16px;">Yes, Delete</button>
+          <button id="vw-del-no" class="btn-secondary" style="font-size:14px;padding:8px 16px;">${esc(t('cancel',S.lang))}</button>
+        </div>`;
+      document.getElementById('vw-del-yes').onclick=async()=>{
+        const b=document.getElementById('vw-del-yes');b.disabled=true;b.textContent='Deleting\u2026';
+        await deleteDocument(doc.id);await loadDocCounts();
+        if(S.view==='person'&&S.activePerson){
+          const docs=await getDocsByPerson(S.activePerson.id);renderFolders(docs,S.activePerson);
+        }
+        close();
+      };
+      document.getElementById('vw-del-no').onclick=()=>{
+        document.getElementById('vw-del-area').innerHTML=`<button id="vw-del" class="btn-danger" style="font-size:14px;padding:8px 16px;">${ic('trash2',15)} ${esc(t('delete',S.lang))}</button>`;
+        setupDel();
+      };
+    };
+  }
+  setupDel();
+
+  // Download
+  document.getElementById('vw-dl').onclick=()=>{if(blob)openDownload(doc,blob);};
+
+  function onKey(e){if(e.key==='Escape')close();}
+  document.addEventListener('keydown',onKey);
+
+  // Load file
+  try{
+    blob=await getDocumentFile(doc.id);
+    const preview=document.getElementById('vw-preview');
+    const isImg=doc.fileType&&doc.fileType.startsWith('image/');
+    const isPdf=doc.fileType==='application/pdf';
+    if(!blob){preview.innerHTML=`<p style="color:var(--text-muted);font-size:14px;padding:24px;">File not found.</p>`;return;}
+    if(isImg){
+      blobUrl=URL.createObjectURL(blob);
+      preview.innerHTML=`<img src="${esc(blobUrl)}" alt="${esc(doc.name)}" style="max-width:100%;border-radius:8px;" />`;
+      const ocrRow=document.getElementById('vw-ocr-row');if(ocrRow)ocrRow.style.display='block';
+      document.getElementById('vw-ocr').onclick=async()=>{
+        if(ocrLoading)return;ocrLoading=true;
+        const btn=document.getElementById('vw-ocr');btn.disabled=true;btn.textContent=`${t('extracting',S.lang)} 0%`;
+        try{
+          if(!window.Tesseract){
+            await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+          }
+          const worker=await Tesseract.createWorker('eng',1,{logger:m=>{if(m.status==='recognizing text'&&document.getElementById('vw-ocr'))document.getElementById('vw-ocr').textContent=`${t('extracting',S.lang)} ${Math.round(m.progress*100)}%`;}});
+          const{data:{text}}=await worker.recognize(blobUrl);await worker.terminate();
+          const rm=document.getElementById('vw-remark');if(rm)rm.value=(rm.value+'\n\n--- OCR Text ---\n'+text).trim();
+        }catch(e){console.error('OCR failed:',e);}
+        finally{ocrLoading=false;const b=document.getElementById('vw-ocr');if(b){b.disabled=false;b.textContent='&#128269; Extract Text (OCR)';}}
+      };
+    }else if(isPdf){
+      preview.innerHTML=`<p style="color:var(--text-muted);font-size:14px;">Rendering PDF pages\u2026</p>`;
+      try{
+        const pages=await pdfToImages(blob);
+        pages.forEach(p=>{const u=URL.createObjectURL(p);pdfUrls.push(u);});
+        preview.innerHTML=pdfUrls.map((u,i)=>`<img src="${esc(u)}" alt="Page ${i+1}" style="max-width:100%;border-radius:8px;${i<pdfUrls.length-1?'margin-bottom:12px;':''}" />`).join('');
+      }catch(e){preview.innerHTML=`<p style="color:var(--text-muted);font-size:14px;padding:16px;">Could not render PDF: ${esc(e.message)}</p>`;}
+    }else{
+      preview.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:32px;">${ic('filetext',48,'var(--text-muted)')}<p style="font-size:14px;margin-top:12px;opacity:.6;">Preview not available for this file type.</p></div>`;
+    }
+  }catch(e){const pr=document.getElementById('vw-preview');if(pr)pr.innerHTML=`<p style="color:var(--danger);font-size:14px;padding:16px;">${esc(e.message)}</p>`;}
+}
+
+/* ── DOWNLOAD MODAL ─────────────────────────────────────────────────────────── */
+function openDownload(doc,blob){
+  let fmt='JPG',preset='original',processing=false;
+  const isImg=blob&&blob.type.startsWith('image/');
+  const pvUrl=URL.createObjectURL(blob);
+  const ov=document.createElement('div');
+  ov.style.cssText='position:absolute;inset:0;background:rgba(0,0,0,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:10;border-radius:18px;';
+  ov.innerHTML=`
+    <div class="modal-box" style="max-width:420px;width:90%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <h3 style="font-family:'Sora',system-ui,sans-serif;font-weight:700;font-size:1.1rem;color:var(--text);">Download</h3>
+        <button id="dl-close" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;">${ic('x',20)}</button>
+      </div>
+      ${isImg?`<div style="width:100%;height:120px;border-radius:10px;overflow:hidden;background:var(--surface-2);margin-bottom:20px;display:flex;align-items:center;justify-content:center;"><img src="${esc(pvUrl)}" alt="Preview" style="max-width:100%;max-height:100%;object-fit:contain;" /></div>`:''}
+      <div style="margin-bottom:16px;">
+        <p style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">Format</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="pill fmt active" data-fmt="JPG">JPG</button>
+          <button class="pill fmt" data-fmt="PNG">PNG</button>
+          <button class="pill fmt" data-fmt="PDF">PDF</button>
+        </div>
+      </div>
+      <div id="dl-size" style="margin-bottom:20px;">
+        <p style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:8px;">Size</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="pill pst active" data-preset="original">Original</button>
+          <button class="pill pst" data-preset="passport">Passport (413&#215;531)</button>
+          <button class="pill pst" data-preset="stamp">Stamp (150&#215;150)</button>
+          <button class="pill pst" data-preset="a4">A4 (2480&#215;3508)</button>
+        </div>
+      </div>
+      <button id="dl-go" class="btn-primary" style="width:100%;padding:11px;font-size:15px;">&#11015; Download</button>
+    </div>`;
+  const vwBox=document.getElementById('vw-box');vwBox.appendChild(ov);
+  function close(){URL.revokeObjectURL(pvUrl);vwBox.removeChild(ov);}
+  ov.addEventListener('click',e=>{if(e.target===ov)close();});
+  document.getElementById('dl-close').onclick=close;
+  ov.querySelectorAll('.fmt').forEach(b=>{b.onclick=()=>{fmt=b.dataset.fmt;ov.querySelectorAll('.fmt').forEach(x=>x.classList.toggle('active',x===b));const ds=document.getElementById('dl-size');if(ds)ds.style.display=fmt==='PDF'?'none':'block';};});
+  ov.querySelectorAll('.pst').forEach(b=>{b.onclick=()=>{preset=b.dataset.preset;ov.querySelectorAll('.pst').forEach(x=>x.classList.toggle('active',x===b));};});
+  document.getElementById('dl-go').onclick=async()=>{
+    if(processing)return;processing=true;
+    const goBtn=document.getElementById('dl-go');goBtn.disabled=true;goBtn.innerHTML='<span class="animate-spin">&#9203;</span> Processing\u2026';
+    try{
+      const MIME={JPG:'image/jpeg',PNG:'image/png',PDF:'application/pdf'};
+      const EXT={JPG:'jpg',PNG:'png',PDF:'pdf'};
+      let out;
+      if(fmt==='PDF'){out=blob.type==='application/pdf'?blob:await blobToPdfBlob(blob);}
+      else{out=isImg?await resizeImageForExport(blob,MIME[fmt],preset):blob;}
+      const base=(doc.name||'document').replace(/\.[^.]+$/,'');
+      saveAs(out,`${base}.${EXT[fmt]}`);close();
+    }catch(e){alert(`Download failed: ${e.message}`);}
+    finally{processing=false;if(goBtn.isConnected){goBtn.disabled=false;goBtn.textContent='\u2b07 Download';}}
+  };
+}
+
+/* ── SEARCH RESULTS ─────────────────────────────────────────────────────────── */
+function renderSearch(el){
+  const q=S.searchQuery;const results=Array.isArray(S.searchResults)?S.searchResults:[];
+  const pm=Object.fromEntries(S.people.map(p=>[p.id,p]));
+  el.innerHTML=`
+    <div style="padding:24px;max-width:1100px;margin:0 auto;">
+      <div class="mobile-search-bar" style="margin-bottom:20px;">
+        <div style="position:relative;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;">${ic('search',15,'var(--text-muted)')}</span>
+          <input id="mob-search" class="input" value="${esc(q)}" placeholder="${esc(t('search_placeholder',S.lang))}" style="padding-left:36px;" />
+        </div>
+      </div>
+      ${!q.trim()?`
+        <div style="padding:48px 24px;text-align:center;color:var(--text-muted);">
+          ${ic('search',52,'var(--text-muted)')}
+          <p style="font-family:'Sora',system-ui,sans-serif;font-weight:600;font-size:1rem;margin-top:16px;opacity:.6;">Start typing to search documents</p>
+        </div>`:
+      results.length===0?`
+        <div style="padding:48px 24px;text-align:center;color:var(--text-muted);">
+          ${ic('filetext',52,'var(--text-muted)')}
+          <p style="margin-top:16px;opacity:.6;">${esc(t('no_docs',S.lang))}</p>
+        </div>`:
+      `<p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">${results.length} result${results.length!==1?'s':''} for &ldquo;${esc(q)}&rdquo;</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">${results.map(doc=>{
+          const p=pm[doc.personId];
+          return`<div class="card sr-card" data-docid="${esc(doc.id)}" style="padding:16px 20px;cursor:pointer;display:flex;align-items:center;gap:16px;">
+            ${ic('filetext',28,'var(--primary)')}
+            <div style="flex:1;min-width:0;">
+              <p style="font-weight:600;color:var(--text);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(doc.name)}</p>
+              <div style="display:flex;gap:8px;margin-top:4px;flex-wrap:wrap;align-items:center;">
+                ${p?`<span style="font-size:13px;color:var(--text-muted);">${esc(p.name)}</span>`:''}
+                <span class="badge">${esc(doc.folderName)}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}</div>`}
+    </div>`;
+  const ms=document.getElementById('mob-search');
+  if(ms){
+    let st=null;
+    ms.addEventListener('input',e=>{
+      const v=e.target.value;S.searchQuery=v;const ni=document.getElementById('n-search');if(ni)ni.value=v;
+      clearTimeout(st);
+      if(!v.trim()){S.searchResults=[];renderContent();return;}
+      st=setTimeout(async()=>{const docs=await getAllDocs();const qq=v.toLowerCase();S.searchResults=docs.filter(d=>d.name.toLowerCase().includes(qq));renderContent();},300);
+    });
+  }
+  document.querySelectorAll('.sr-card').forEach(card=>{
+    card.onclick=async()=>{const doc=results.find(d=>d.id===card.dataset.docid);if(doc)await openViewer(doc);};
+  });
+}
+
+/* ── INIT ───────────────────────────────────────────────────────────────────── */
+async function initApp(){
+  buildShell();applyTheme();
+  S.people=await getPeople();await loadDocCounts();renderContent();
+}
+
+applyTheme();
+if(S.isUnlocked){initApp();}else{showLogin();}
+  </script>
 </body>
 </html>
