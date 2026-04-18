@@ -33,7 +33,7 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
 
   // OCR
   const [ocrProgress, setOcrProgress] = useState(null) // null | 0-100
-  const [ocrRunning, setOcrRunning] = useState(false)
+  const [ocrLoading, setOcrLoading] = useState(false)
 
   // Nested download modal
   const [showDownload, setShowDownload] = useState(false)
@@ -142,31 +142,27 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
   }
 
   // ── OCR ──────────────────────────────────────────────────────
-  async function handleOcr() {
-    if (!blob) return
-    setOcrRunning(true)
-    setOcrProgress(0)
-    let worker = null
+  const handleExtractText = async () => {
+    setOcrLoading(true);
+    setOcrProgress(0);
     try {
-      const { createWorker } = await import('tesseract.js')
-      worker = await createWorker('eng', {
-        logger: (m) => {
+      const { createWorker } = await import('tesseract.js');
+      const worker = await createWorker('eng', 1, {
+        logger: m => {
           if (m.status === 'recognizing text') {
-            setOcrProgress(Math.round(m.progress * 100))
+            setOcrProgress(Math.round(m.progress * 100));
           }
-        },
-      })
-      const result = await worker.recognize(blob)
-      const extracted = result.data.text.trim()
-      setRemark((prev) => (prev ? `${prev}\n\n${extracted}` : extracted))
+        }
+      });
+      const { data: { text } } = await worker.recognize(blobUrl);
+      await worker.terminate();
+      setRemark(prev => prev + '\n\n--- OCR Text ---\n' + text);
     } catch (err) {
-      alert(`OCR failed: ${err.message}`)
+      console.error('OCR failed:', err);
     } finally {
-      if (worker) await worker.terminate()
-      setOcrRunning(false)
-      setOcrProgress(null)
+      setOcrLoading(false);
     }
-  }
+  };
 
   // ── Delete ───────────────────────────────────────────────────
   async function handleDelete() {
@@ -295,10 +291,10 @@ export default function DocumentViewerModal({ doc: initialDoc, onClose, onUpdate
             <button
               className="btn-secondary"
               style={{ fontSize: '14px', padding: '8px 16px' }}
-              onClick={handleOcr}
-              disabled={ocrRunning || !blob}
+              onClick={handleExtractText}
+              disabled={ocrLoading || !blobUrl}
             >
-              {ocrRunning
+              {ocrLoading
                 ? `${t('extracting', lang)} ${ocrProgress !== null ? `${ocrProgress}%` : ''}`
                 : `🔍 Extract Text (OCR)`}
             </button>
