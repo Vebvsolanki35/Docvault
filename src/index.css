@@ -234,7 +234,8 @@ button {
 .input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-dim);
+  /* 3px solid ring meets WCAG 2.1 AA focus-indicator contrast */
+  box-shadow: 0 0 0 3px rgba(0, 200, 150, 0.35);
 }
 
 .input:disabled {
@@ -344,6 +345,11 @@ button {
   border: none;
   border-top: 1px solid var(--border);
   margin: 16px 0;
+}
+
+/* --- .desktop-only --------------------------------------- */
+.desktop-only {
+  display: block;
 }
 
 /* 6. Mobile Responsive -------------------------------------- */
